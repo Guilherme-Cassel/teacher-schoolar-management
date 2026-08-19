@@ -19,3 +19,4 @@ npm-debug.log*
 coverage/
 *.tsbuildinfo
 next-env.d.ts
+/.vs
