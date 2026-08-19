@@ -1,29 +1,33 @@
-import { CheckCircle2 } from 'lucide-react'
-import { getAppContext, getGradingConfig } from '@/lib/data/context'
+import { GraduationCap } from 'lucide-react'
+import { getAppContext, getCurrentYear, getGradingConfig } from '@/lib/data/context'
 import { getClassStudents, resolveScope } from '@/lib/data/scope'
-import { buildClosureRows } from '@/lib/data/closure'
+import { buildAnnualRows } from '@/lib/data/annual'
 import { Card, EmptyState } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
 import { ScopePicker } from '@/components/scope-picker'
 import { ClosureTabs } from '@/components/closure-tabs'
-import { ClosureTable } from './closure-table'
+import { AnnualTable } from './annual-table'
 
-export default async function FechamentoPage({
+export default async function FechamentoAnualPage({
   searchParams,
 }: {
   searchParams: Promise<{ oferta?: string; periodo?: string }>
 }) {
   const params = await searchParams
   const ctx = (await getAppContext())!
-  const scope = await resolveScope(ctx.schoolId, params)
+  const [scope, { year }] = await Promise.all([
+    resolveScope(ctx.schoolId, params),
+    getCurrentYear(ctx.schoolId),
+  ])
 
-  if (!scope.offer || !scope.term) {
+  if (!scope.offer || !year) {
     return (
       <>
-        <PageHeader title="Fechamento do período" />
+        <PageHeader title="Resultado do ano" />
+        <ClosureTabs />
         <Card>
           <EmptyState
-            icon={<CheckCircle2 className="h-10 w-10" />}
+            icon={<GraduationCap className="h-10 w-10" />}
             title="Falta configurar a estrutura"
             description="Crie um ano letivo em Períodos e vincule uma disciplina a uma turma em Turmas."
           />
@@ -37,9 +41,9 @@ export default async function FechamentoPage({
     getGradingConfig(ctx.schoolId, scope.offer.id),
   ])
 
-  const rows = await buildClosureRows({
+  const { rows, terms } = await buildAnnualRows({
     classSubjectId: scope.offer.id,
-    termId: scope.term.id,
+    schoolYearId: year.id,
     students,
     config,
   })
@@ -47,8 +51,8 @@ export default async function FechamentoPage({
   return (
     <>
       <PageHeader
-        title="Fechamento do período"
-        description="Nota e conduta lado a lado. O sistema sugere; a decisão e a justificativa são suas."
+        title={`Resultado do ano — ${year.year}`}
+        description="A média anual vem dos fechamentos de período, já com as decisões que você tomou em cada um."
       />
 
       <ClosureTabs />
@@ -57,25 +61,25 @@ export default async function FechamentoPage({
         offers={scope.offers}
         terms={scope.terms}
         offerId={scope.offer.id}
-        termId={scope.term.id}
+        termId={scope.term?.id ?? null}
+        showTerm={false}
       />
 
       {rows.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<CheckCircle2 className="h-10 w-10" />}
+            icon={<GraduationCap className="h-10 w-10" />}
             title="Nenhum aluno matriculado nesta turma"
-            description="Matricule alunos na turma para fazer o fechamento."
+            description="Matricule alunos na turma para fechar o ano."
           />
         </Card>
       ) : (
-        <ClosureTable
+        <AnnualTable
           rows={rows}
+          terms={terms}
           config={config}
           classSubjectId={scope.offer.id}
-          termId={scope.term.id}
-          termName={scope.term.name}
-          offerLabel={`${scope.offer.className} · ${scope.offer.subjectName}`}
+          schoolYearId={year.id}
         />
       )}
     </>

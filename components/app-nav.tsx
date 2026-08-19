@@ -5,7 +5,7 @@ import type { Route } from 'next'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
-  CalendarRange, CheckCircle2, ClipboardList, FileText, GraduationCap,
+  CalendarCheck, CalendarRange, CheckCircle2, ClipboardList, FileText, GraduationCap,
   LayoutDashboard, LogOut, Menu, MessageSquareWarning, School, Users, X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 const NAV = [
   { href: '/painel',       label: 'Painel',      icon: LayoutDashboard },
   { href: '/notas',        label: 'Notas',       icon: ClipboardList },
+  { href: '/frequencia',   label: 'Frequência',  icon: CalendarCheck },
   { href: '/ocorrencias',  label: 'Ocorrências', icon: MessageSquareWarning },
   { href: '/fechamento',   label: 'Fechamento',  icon: CheckCircle2 },
   { href: '/relatorios',   label: 'Relatórios',  icon: FileText },

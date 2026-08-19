@@ -27,11 +27,14 @@ export function ScopePicker({
   terms,
   offerId,
   termId,
+  /** O fechamento anual olha o ano inteiro; seletor de período só confundiria. */
+  showTerm = true,
 }: {
   offers: Offer[]
   terms: Term[]
   offerId: string | null
   termId: string | null
+  showTerm?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -61,27 +64,29 @@ export function ScopePicker({
         ))}
       </Select>
 
-      <Select
-        value={termId ?? ''}
-        onChange={(e) => setParam('periodo', e.target.value)}
-        className="w-auto min-w-40"
-        aria-label="Período letivo"
-      >
-        {terms.length === 0 && <option value="">Nenhum período</option>}
-        {terms.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </Select>
+      {showTerm && (
+        <Select
+          value={termId ?? ''}
+          onChange={(e) => setParam('periodo', e.target.value)}
+          className="w-auto min-w-40"
+          aria-label="Período letivo"
+        >
+          {terms.length === 0 && <option value="">Nenhum período</option>}
+          {terms.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      )}
 
-      {term?.status === 'closed' && (
+      {showTerm && term?.status === 'closed' && (
         <Badge tone="amber">
           <Lock className="h-3 w-3" />
           Período fechado
         </Badge>
       )}
-      {term?.status === 'planned' && <Badge tone="slate">Ainda não aberto</Badge>}
+      {showTerm && term?.status === 'planned' && <Badge tone="slate">Ainda não aberto</Badge>}
     </div>
   )
 }
