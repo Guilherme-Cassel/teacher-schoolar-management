@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50:  oklch(0.977 0.014 258);
+  --color-brand-100: oklch(0.945 0.031 258);
+  --color-brand-200: oklch(0.895 0.058 258);
+  --color-brand-300: oklch(0.822 0.093 258);
+  --color-brand-400: oklch(0.720 0.140 261);
+  --color-brand-500: oklch(0.628 0.176 264);
+  --color-brand-600: oklch(0.548 0.203 266);
+  --color-brand-700: oklch(0.482 0.192 267);
+  --color-brand-800: oklch(0.418 0.160 266);
+  --color-brand-900: oklch(0.372 0.129 266);
+}
+
+:root {
+  --background: oklch(0.985 0.002 250);
+  --surface: oklch(1 0 0);
+  --border: oklch(0.922 0.004 250);
+  --foreground: oklch(0.21 0.012 255);
+  --muted: oklch(0.556 0.014 255);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabelas de notas: números alinhados e de largura fixa. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visível e consistente — a grade de notas é navegada por teclado. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------ impressão / boletim ---- */
+@media print {
+  @page {
+    margin: 14mm;
+    size: A4;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .no-print,
+  nav[data-app-nav] {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Não quebrar um aluno no meio entre páginas. */
+  tr, .avoid-break {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}
+
+.print-only {
+  display: none;
+}
