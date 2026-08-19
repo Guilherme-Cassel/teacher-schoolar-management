@@ -120,6 +120,7 @@ export async function saveAttendance(params: {
   )
 
   if (error) return { ok: false, error: friendlyError(error) }
+  revalidatePath('/frequencia')
   revalidatePath('/fechamento')
   return { ok: true }
 }
@@ -156,6 +157,7 @@ export async function setClassesHeld(params: {
     .upsert(rows, { onConflict: 'student_id,class_subject_id,term_id' })
 
   if (error) return { ok: false, error: friendlyError(error) }
+  revalidatePath('/frequencia')
   revalidatePath('/notas')
   revalidatePath('/fechamento')
   return { ok: true }

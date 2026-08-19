@@ -105,6 +105,7 @@ export default async function NotasPage({
         </Card>
       ) : (
         <GradeGrid
+key={`${scope.offer.id}:${scope.term.id}`}
           students={students}
           assessments={assessmentList}
           grades={grades ?? []}

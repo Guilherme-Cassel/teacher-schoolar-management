@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getGradingConfig } from '@/lib/data/context'
-import { validateDecision } from '@/lib/domain/closure-suggestion'
+import { MIN_JUSTIFICATION_LENGTH, validateDecision } from '@/lib/domain/closure-suggestion'
 import { conductBand } from '@/lib/domain/conduct'
 import { resolveStatus } from '@/lib/domain/grading'
 import { type ActionResult, friendlyError, requireContext } from './_helpers'
@@ -101,5 +101,91 @@ export async function reopenClosure(
   if (error) return { ok: false, error: friendlyError(error) }
 
   revalidatePath('/fechamento')
+  return { ok: true }
+}
+
+// ------------------------------------------------------- fechamento anual --
+
+export interface FinalResultInput {
+  studentId: string
+  classSubjectId: string
+  schoolYearId: string
+  annualAverage: number | null
+  attendancePct: number | null
+  status: 'approved' | 'recovery' | 'failed' | 'council_approved'
+  notes: string | null
+}
+
+/**
+ * Grava o resultado do ano. Aprovação pelo conselho é uma decisão que contraria
+ * o cálculo, então exige justificativa — mesma regra do ajuste por período.
+ */
+export async function saveFinalResult(input: FinalResultInput): Promise<ActionResult> {
+  const ctx = await requireContext()
+
+  if (input.status === 'council_approved') {
+    const text = (input.notes ?? '').trim()
+    if (text.length < MIN_JUSTIFICATION_LENGTH) {
+      return {
+        ok: false,
+        error: `Aprovar pelo conselho exige uma justificativa de pelo menos ${MIN_JUSTIFICATION_LENGTH} caracteres.`,
+      }
+    }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('final_results').upsert(
+    {
+      school_id: ctx.schoolId,
+      student_id: input.studentId,
+      class_subject_id: input.classSubjectId,
+      school_year_id: input.schoolYearId,
+      annual_average: input.annualAverage,
+      attendance_pct: input.attendancePct,
+      status: input.status,
+      notes: input.notes,
+      closed_by: ctx.userId,
+      closed_at: new Date().toISOString(),
+    },
+    { onConflict: 'student_id,class_subject_id,school_year_id' },
+  )
+
+  if (error) return { ok: false, error: friendlyError(error) }
+
+  revalidatePath('/fechamento/anual')
+  revalidatePath('/relatorios')
+  return { ok: true }
+}
+
+export async function saveFinalResultsInBulk(
+  inputs: FinalResultInput[],
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  for (const input of inputs) {
+    const r = await saveFinalResult(input)
+    if (!r.ok) return { ok: false, error: r.error }
+  }
+  revalidatePath('/fechamento/anual')
+  return { ok: true, count: inputs.length }
+}
+
+export async function reopenFinalResult(
+  studentId: string,
+  classSubjectId: string,
+  schoolYearId: string,
+): Promise<ActionResult> {
+  await requireContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('final_results')
+    .delete()
+    .eq('student_id', studentId)
+    .eq('class_subject_id', classSubjectId)
+    .eq('school_year_id', schoolYearId)
+
+  if (error) return { ok: false, error: friendlyError(error) }
+
+  revalidatePath('/fechamento/anual')
   return { ok: true }
 }
