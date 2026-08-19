@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { Route } from 'next'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import {
   CalendarCheck, CalendarRange, CheckCircle2, ClipboardList, FileText, GraduationCap,
@@ -14,10 +14,10 @@ import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/painel',       label: 'Painel',      icon: LayoutDashboard },
-  { href: '/notas',        label: 'Notas',       icon: ClipboardList },
-  { href: '/frequencia',   label: 'Frequência',  icon: CalendarCheck },
-  { href: '/ocorrencias',  label: 'Ocorrências', icon: MessageSquareWarning },
-  { href: '/fechamento',   label: 'Fechamento',  icon: CheckCircle2 },
+  { href: '/notas',        label: 'Notas',       icon: ClipboardList,          scoped: true },
+  { href: '/frequencia',   label: 'Frequência',  icon: CalendarCheck,          scoped: true },
+  { href: '/ocorrencias',  label: 'Ocorrências', icon: MessageSquareWarning,   scoped: true },
+  { href: '/fechamento',   label: 'Fechamento',  icon: CheckCircle2,           scoped: true },
   { href: '/relatorios',   label: 'Relatórios',  icon: FileText },
 ] as const
 
@@ -34,6 +34,7 @@ export function AppNav({
   userName: string
 }) {
   const pathname = usePathname()
+  const params = useSearchParams()
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
@@ -43,13 +44,27 @@ export function AppNav({
     router.refresh()
   }
 
-  const link = (item: { href: Route; label: string; icon: React.ElementType }) => {
+  // Notas, Frequência, Ocorrências e Fechamento trabalham sobre a mesma
+  // turma+disciplina+período. Sem carregar a seleção, trocar de tela pelo menu
+  // joga a professora de volta na oferta padrão — e ela olha o dado errado
+  // achando que é o mesmo.
+  const scopedQuery = (() => {
+    const carried = new URLSearchParams()
+    for (const key of ['oferta', 'periodo']) {
+      const value = params.get(key)
+      if (value) carried.set(key, value)
+    }
+    const qs = carried.toString()
+    return qs ? `?${qs}` : ''
+  })()
+
+  const link = (item: { href: Route; label: string; icon: React.ElementType; scoped?: boolean }) => {
     const active = pathname === item.href || pathname.startsWith(item.href + '/')
     const Icon = item.icon
     return (
       <Link
         key={item.href}
-        href={item.href}
+        href={(item.scoped ? `${item.href}${scopedQuery}` : item.href) as Route}
         onClick={() => setOpen(false)}
         className={cn(
           'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',

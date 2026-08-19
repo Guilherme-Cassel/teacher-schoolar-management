@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Lock } from 'lucide-react'
+import { BookMarked, Lock } from 'lucide-react'
 import { Select } from '@/components/ui/field'
 import { Badge } from '@/components/ui/badge'
 
@@ -49,11 +49,16 @@ export function ScopePicker({
   const term = terms.find((t) => t.id === termId)
 
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-3 no-print">
+    <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 no-print">
+      <span className="flex items-center gap-2 text-sm font-medium text-brand-800">
+        <BookMarked className="h-4 w-4" />
+        {showTerm ? 'Lançando em' : 'Turma'}
+      </span>
+
       <Select
         value={offerId ?? ''}
         onChange={(e) => setParam('oferta', e.target.value)}
-        className="w-auto min-w-56"
+        className="w-auto min-w-56 font-medium"
         aria-label="Turma e disciplina"
       >
         {offers.length === 0 && <option value="">Nenhuma turma com disciplina</option>}
