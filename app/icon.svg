@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gestão Escolar">
+  <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+  <path d="M32 15 55 25.5 32 36 9 25.5Z" fill="#fff"/>
+  <path d="M21 31.5v9.5c0 3.4 4.9 6 11 6s11-2.6 11-6v-9.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M55 25.5v12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg>
