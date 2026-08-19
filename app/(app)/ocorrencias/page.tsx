@@ -84,6 +84,7 @@ export default async function OcorrenciasPage({
         </Card>
       ) : (
         <OccurrenceBoard
+key={`${scope.offer.id}:${scope.term.id}`}
           students={students}
           occurrences={(occurrences ?? []).map((o) => ({
             ...o,

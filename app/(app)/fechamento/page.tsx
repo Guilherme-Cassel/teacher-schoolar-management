@@ -70,6 +70,7 @@ export default async function FechamentoPage({
         </Card>
       ) : (
         <ClosureTable
+key={`${scope.offer.id}:${scope.term.id}`}
           rows={rows}
           config={config}
           classSubjectId={scope.offer.id}

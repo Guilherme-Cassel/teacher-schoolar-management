@@ -75,6 +75,7 @@ export default async function FechamentoAnualPage({
         </Card>
       ) : (
         <AnnualTable
+          key={`${scope.offer.id}:${year.id}`}
           rows={rows}
           terms={terms}
           config={config}

@@ -72,6 +72,7 @@ export default async function FrequenciaPage({
         </Card>
       ) : (
         <AttendanceGrid
+          key={`${scope.offer.id}:${scope.term.id}`}
           students={students}
           classesHeld={classesHeld}
           absencesBy={absencesBy}
