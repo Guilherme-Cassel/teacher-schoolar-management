@@ -1,7 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/auth']
+// /api/keep-alive precisa passar sem sessão: é o cron da Vercel que impede o
+// Supabase de pausar. Sem esta exceção ele cairia no login e nunca tocaria o banco.
+const PUBLIC_ROUTES = ['/login', '/auth', '/api/keep-alive']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
