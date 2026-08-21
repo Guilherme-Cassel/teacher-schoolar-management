@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import {
   CalendarCheck, CalendarRange, CheckCircle2, ClipboardList, FileText,
-  LayoutDashboard, LogOut, Menu, MessageSquareWarning, School, Settings, Users, X,
+  LayoutDashboard, LogOut, Menu, MessageSquareWarning, School, Settings, Upload, Users, X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,10 @@ const NAV = [
   { href: '/ocorrencias',  label: 'Ocorrências', icon: MessageSquareWarning,   scoped: true },
   { href: '/fechamento',   label: 'Fechamento',  icon: CheckCircle2,           scoped: true },
   { href: '/relatorios',   label: 'Relatórios',  icon: FileText },
+] as const
+
+const NAV_FERRAMENTAS = [
+  { href: '/importar', label: 'Importar dados', icon: Upload },
 ] as const
 
 const NAV_CADASTROS = [
@@ -136,6 +140,17 @@ export function AppNav({
               Cadastros
             </p>
             <div className="space-y-1">{NAV_CADASTROS.map(link)}</div>
+          </div>
+
+          <div>
+
+            <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+
+              Ferramentas
+
+            </p>
+
+            <div className="space-y-1">{NAV_FERRAMENTAS.map(link)}</div>
           </div>
         </div>
 

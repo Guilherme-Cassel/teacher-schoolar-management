@@ -56,8 +56,8 @@ Rode os arquivos de `supabase/migrations/` **na ordem numérica**, um de cada ve
 
 1. No projeto, abra **SQL Editor → New query**.
 2. Cole o conteúdo de `0001_initial_schema.sql` e clique em **Run**.
-3. Repita para `0002_health_check.sql`, `0003_annual_indexes.sql` e
-   `0004_school_provisioning.sql`.
+3. Repita, na ordem, para `0002_health_check.sql`, `0003_annual_indexes.sql`,
+   `0004_school_provisioning.sql` e `0005_historical_import.sql`.
 4. Confira em **Table Editor**: devem aparecer 16 tabelas com o cadeado de RLS ativo.
 
 A ordem importa: as migrations posteriores assumem que as anteriores já
