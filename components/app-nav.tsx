@@ -5,11 +5,13 @@ import type { Route } from 'next'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import {
-  CalendarCheck, CalendarRange, CheckCircle2, ClipboardList, FileText, GraduationCap,
-  LayoutDashboard, LogOut, Menu, MessageSquareWarning, School, Users, X,
+  CalendarCheck, CalendarRange, CheckCircle2, ClipboardList, FileText,
+  LayoutDashboard, LogOut, Menu, MessageSquareWarning, School, Settings, Users, X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { SchoolSwitcher } from '@/components/school-switcher'
+import type { SchoolOption } from '@/lib/data/context'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -28,9 +30,10 @@ const NAV_CADASTROS = [
 ] as const
 
 export function AppNav({
-  schoolName, userName,
+  schools, currentSchoolId, userName,
 }: {
-  schoolName: string
+  schools: SchoolOption[]
+  currentSchoolId: string
   userName: string
 }) {
   const pathname = usePathname()
@@ -107,17 +110,18 @@ export function AppNav({
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
+        <div className="flex items-start gap-1 border-b border-slate-200 p-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-900">{schoolName}</p>
-            <p className="truncate text-xs text-slate-500">{userName}</p>
+            <SchoolSwitcher
+              schools={schools}
+              currentId={currentSchoolId}
+              userName={userName}
+              onNavigate={() => setOpen(false)}
+            />
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 lg:hidden"
+            className="mt-2 rounded-lg p-1 text-slate-500 hover:bg-slate-100 lg:hidden"
             aria-label="Fechar menu"
           >
             <X className="h-5 w-5" />
@@ -135,7 +139,8 @@ export function AppNav({
           </div>
         </div>
 
-        <div className="border-t border-slate-200 p-3">
+        <div className="space-y-1 border-t border-slate-200 p-3">
+          {link({ href: '/configuracoes', label: 'Configurações', icon: Settings })}
           <button
             onClick={signOut}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"

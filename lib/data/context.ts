@@ -1,46 +1,95 @@
 import { cache } from 'react'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_GRADING_CONFIG, type GradingConfig } from '@/lib/domain/grading'
+
+/** Ambiente ativo. Cookie, e não querystring: precisa sobreviver à navegação. */
+export const SCHOOL_COOKIE = 'current_school_id'
+
+export type MemberRole = 'teacher' | 'coordinator' | 'admin'
+
+export interface SchoolOption {
+  id: string
+  name: string
+  role: MemberRole
+}
 
 export interface AppContext {
   userId: string
   email: string
   schoolId: string
   schoolName: string
-  role: 'teacher' | 'coordinator' | 'admin'
+  role: MemberRole
   displayName: string | null
+  /** Todos os ambientes do usuário, para alimentar o seletor. */
+  schools: SchoolOption[]
 }
+
+/** Sessão autenticada, independente de ter vínculo com escola. */
+export const getAuthUser = cache(async () => {
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
+  if (!claims?.sub) return null
+  return { id: claims.sub as string, email: (claims.email as string) ?? '' }
+})
 
 /**
  * Contexto da sessão. `cache` garante uma única consulta por request,
  * mesmo sendo chamado por vários Server Components da mesma página.
+ *
+ * Devolve null em dois casos distintos: sem sessão, ou autenticado sem
+ * nenhum ambiente. Quem precisa separar os dois usa getAuthUser() —
+ * é o que o layout faz para mandar a professora ao primeiro acesso.
  */
 export const getAppContext = cache(async (): Promise<AppContext | null> => {
-  const supabase = await createClient()
+  const user = await getAuthUser()
+  if (!user) return null
 
-  // Verificação local da assinatura do JWT — sem ida à rede. Ver middleware.ts.
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const claims = claimsData?.claims
-  if (!claims?.sub) return null
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('school_members')
-    .select('school_id, role, display_name, schools(name)')
-    .eq('user_id', claims.sub)
-    .limit(1)
-    .maybeSingle()
+    .select('school_id, role, display_name, schools(name, created_at)')
+    .eq('user_id', user.id)
 
-  if (!data) return null
+  if (!data?.length) return null
 
-  const school = data.schools as unknown as { name: string } | null
+  type Row = {
+    school_id: string
+    role: MemberRole
+    display_name: string | null
+    schools: { name: string; created_at: string } | null
+  }
+
+  // Ordem estável por data de criação: o seletor não pode dançar entre
+  // requisições, e o fallback precisa cair sempre no mesmo ambiente.
+  const rows = ([...data] as unknown as Row[]).sort((a, b) => {
+    const at = a.schools?.created_at ?? ''
+    const bt = b.schools?.created_at ?? ''
+    return at === bt ? a.school_id.localeCompare(b.school_id) : at.localeCompare(bt)
+  })
+
+  const schools: SchoolOption[] = rows.map((r) => ({
+    id: r.school_id,
+    name: r.schools?.name ?? 'Minha escola',
+    role: r.role,
+  }))
+
+  // Um cookie apontando para escola que saiu do ar (vínculo removido, escola
+  // apagada) não pode derrubar o app: cai no primeiro ambiente em silêncio.
+  const cookieStore = await cookies()
+  const wanted = cookieStore.get(SCHOOL_COOKIE)?.value
+  const current = rows.find((r) => r.school_id === wanted) ?? rows[0]
 
   return {
-    userId: claims.sub,
-    email: claims.email ?? '',
-    schoolId: data.school_id,
-    schoolName: school?.name ?? 'Minha escola',
-    role: data.role,
-    displayName: data.display_name,
+    userId: user.id,
+    email: user.email,
+    schoolId: current.school_id,
+    schoolName: current.schools?.name ?? 'Minha escola',
+    role: current.role,
+    displayName: current.display_name,
+    schools,
   }
 })
 
