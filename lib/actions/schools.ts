@@ -95,3 +95,92 @@ export async function listSchools() {
   const ctx = await getAppContext()
   return ctx?.schools ?? []
 }
+
+export interface SchoolContents {
+  students: number
+  grades: number
+  occurrences: number
+  closures: number
+}
+
+/** O que existe num ambiente — o que a exclusão levaria embora. */
+export async function getSchoolContents(schoolId: string): Promise<SchoolContents> {
+  const ctx = await requireContext()
+  if (!ctx.schools.some((s) => s.id === schoolId)) {
+    return { students: 0, grades: 0, occurrences: 0, closures: 0 }
+  }
+
+  const supabase = await createClient()
+  const count = (table: string) =>
+    supabase.from(table).select('*', { count: 'exact', head: true }).eq('school_id', schoolId)
+
+  const [students, grades, occurrences, closures] = await Promise.all([
+    count('students'),
+    count('grades'),
+    count('occurrences'),
+    count('term_closures'),
+  ])
+
+  return {
+    students: students.count ?? 0,
+    grades: grades.count ?? 0,
+    occurrences: occurrences.count ?? 0,
+    closures: closures.count ?? 0,
+  }
+}
+
+export type DeleteSchoolResult =
+  | { ok: true; deleted: { school: string; students: number; grades: number; occurrences: number } }
+  | { ok: false; error: string }
+
+/**
+ * Exclui um ambiente e tudo que cascateia dele.
+ *
+ * A confirmação por digitação é conferida no servidor, não só na tela: um
+ * clique errado é o risco pequeno: o grande é a tela ser contornada. E o nome
+ * digitado é comparado com o nome real do ambiente que o cookie aponta, não
+ * com um valor que o cliente mandou junto.
+ */
+export async function deleteSchool(
+  schoolId: string,
+  typedName: string,
+): Promise<DeleteSchoolResult> {
+  const ctx = await requireContext()
+
+  const target = ctx.schools.find((s) => s.id === schoolId)
+  if (!target) return { ok: false, error: 'Você não tem acesso a este ambiente.' }
+
+  const normalize = (v: string) => v.trim().replace(/\s+/g, ' ').toLowerCase()
+  if (normalize(typedName) !== normalize(target.name)) {
+    return { ok: false, error: 'O nome digitado não confere com o nome do ambiente.' }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('delete_school', { p_school_id: schoolId })
+  if (error) return { ok: false, error: friendlyError(error) }
+
+  const summary = (data ?? {}) as {
+    school?: string
+    students?: number
+    grades?: number
+    occurrences?: number
+  }
+
+  // O cookie ainda aponta para o ambiente que deixou de existir. getAppContext
+  // sabe cair no primeiro da lista, mas limpar aqui evita que a próxima tela
+  // carregue já sabendo de um id morto.
+  const cookieStore = await cookies()
+  cookieStore.delete(SCHOOL_COOKIE)
+
+  revalidatePath('/', 'layout')
+
+  return {
+    ok: true,
+    deleted: {
+      school: summary.school ?? target.name,
+      students: summary.students ?? 0,
+      grades: summary.grades ?? 0,
+      occurrences: summary.occurrences ?? 0,
+    },
+  }
+}
