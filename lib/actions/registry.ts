@@ -10,6 +10,15 @@ import {
   str,
 } from './_helpers'
 
+/** Junta os impedimentos numa frase só, em português. */
+function blockedMessage(what: string, reasons: string[]): string {
+  const list =
+    reasons.length === 1
+      ? reasons[0]
+      : `${reasons.slice(0, -1).join(', ')} e ${reasons[reasons.length - 1]}`
+  return `Não é possível excluir ${what}: há ${list}. Remova esses registros antes.`
+}
+
 // ------------------------------------------------------------- disciplinas --
 
 export async function createSubject(_prev: unknown, form: FormData): Promise<ActionResult> {
@@ -28,9 +37,51 @@ export async function createSubject(_prev: unknown, form: FormData): Promise<Act
   return { ok: true }
 }
 
+/**
+ * Excluir disciplina cascateia para class_subjects e, dali, para assessments,
+ * grades, term_closures, term_attendance e final_results. Sem esta checagem o
+ * único aviso é um confirm() no navegador, e um clique errado apaga em
+ * silêncio o ano inteiro de lançamentos daquela disciplina.
+ */
 export async function deleteSubject(id: string): Promise<ActionResult> {
   await requireContext()
   const supabase = await createClient()
+
+  const { data: offers } = await supabase
+    .from('class_subjects')
+    .select('id, classes(name)')
+    .eq('subject_id', id)
+
+  const offerIds = (offers ?? []).map((o) => o.id)
+
+  if (offerIds.length > 0) {
+    const [assessments, closures] = await Promise.all([
+      supabase
+        .from('assessments')
+        .select('*', { count: 'exact', head: true })
+        .in('class_subject_id', offerIds),
+      supabase
+        .from('term_closures')
+        .select('*', { count: 'exact', head: true })
+        .in('class_subject_id', offerIds),
+    ])
+
+    const reasons: string[] = []
+    const classNames = (offers ?? [])
+      .map((o) => (o as unknown as { classes: { name: string } | null }).classes?.name)
+      .filter(Boolean)
+
+    reasons.push(
+      `${offerIds.length} turma(s) usando esta disciplina${
+        classNames.length ? ` (${classNames.join(', ')})` : ''
+      }`,
+    )
+    if (assessments.count) reasons.push(`${assessments.count} avaliação(ões) lançada(s)`)
+    if (closures.count) reasons.push(`${closures.count} fechamento(s) registrado(s)`)
+
+    return { ok: false, error: blockedMessage('esta disciplina', reasons) }
+  }
+
   const { error } = await supabase.from('subjects').delete().eq('id', id)
   if (error) return { ok: false, error: friendlyError(error) }
   revalidatePath('/turmas')
@@ -60,9 +111,45 @@ export async function createClass(_prev: unknown, form: FormData): Promise<Actio
   return { ok: true }
 }
 
+/**
+ * Mesma armadilha da disciplina, em escala maior: a turma cascateia para
+ * matrículas e ofertas, e dali para todas as notas, frequências e
+ * fechamentos do ano. É a exclusão mais destrutiva do sistema.
+ */
 export async function deleteClass(id: string): Promise<ActionResult> {
   await requireContext()
   const supabase = await createClient()
+
+  const [enrollments, offersRes] = await Promise.all([
+    supabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('class_id', id),
+    supabase.from('class_subjects').select('id').eq('class_id', id),
+  ])
+
+  const offerIds = (offersRes.data ?? []).map((o) => o.id)
+
+  const [assessments, closures] = offerIds.length
+    ? await Promise.all([
+        supabase
+          .from('assessments')
+          .select('*', { count: 'exact', head: true })
+          .in('class_subject_id', offerIds),
+        supabase
+          .from('term_closures')
+          .select('*', { count: 'exact', head: true })
+          .in('class_subject_id', offerIds),
+      ])
+    : [{ count: 0 }, { count: 0 }]
+
+  const reasons: string[] = []
+  if (enrollments.count) reasons.push(`${enrollments.count} aluno(s) matriculado(s)`)
+  if (offerIds.length) reasons.push(`${offerIds.length} disciplina(s) vinculada(s)`)
+  if (assessments.count) reasons.push(`${assessments.count} avaliação(ões) lançada(s)`)
+  if (closures.count) reasons.push(`${closures.count} fechamento(s) registrado(s)`)
+
+  if (reasons.length > 0) {
+    return { ok: false, error: blockedMessage('esta turma', reasons) }
+  }
+
   const { error } = await supabase.from('classes').delete().eq('id', id)
   if (error) return { ok: false, error: friendlyError(error) }
   revalidatePath('/turmas')

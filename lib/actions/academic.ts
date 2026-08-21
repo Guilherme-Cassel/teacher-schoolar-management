@@ -70,25 +70,31 @@ export async function setCurrentYear(yearId: string): Promise<ActionResult> {
   return { ok: true }
 }
 
-export async function renameTerm(termId: string, name: string): Promise<ActionResult> {
-  await requireContext()
-  const supabase = await createClient()
-  const { error } = await supabase.from('terms').update({ name: name.trim() }).eq('id', termId)
-  if (error) return { ok: false, error: friendlyError(error) }
-  revalidatePath('/periodos')
-  return { ok: true }
-}
-
-export async function updateTermDates(
+/**
+ * Edita nome e datas do período.
+ *
+ * Renomear e ajustar datas eram ações separadas, e a de renomear nunca chegou
+ * a ganhar tela — ficou escrita e sem chamador. Como as duas se editam no
+ * mesmo lugar, viraram uma escrita só: uma ida ao banco em vez de duas, e
+ * nada de código órfão.
+ */
+export async function updateTerm(
   _prev: unknown,
   form: FormData,
 ): Promise<ActionResult> {
   await requireContext()
   const supabase = await createClient()
 
+  const name = str(form, 'name')
+  if (!name) return { ok: false, error: 'Informe o nome do período.' }
+
   const { error } = await supabase
     .from('terms')
-    .update({ starts_on: optStr(form, 'starts_on'), ends_on: optStr(form, 'ends_on') })
+    .update({
+      name,
+      starts_on: optStr(form, 'starts_on'),
+      ends_on: optStr(form, 'ends_on'),
+    })
     .eq('id', str(form, 'term_id'))
 
   if (error) return { ok: false, error: friendlyError(error) }

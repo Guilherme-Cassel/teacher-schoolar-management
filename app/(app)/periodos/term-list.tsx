@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Lock, LockOpen, CalendarDays, Check } from 'lucide-react'
-import { setCurrentYear, setTermStatus, updateTermDates } from '@/lib/actions/academic'
+import { Lock, LockOpen, Pencil, Check } from 'lucide-react'
+import { setCurrentYear, setTermStatus, updateTerm } from '@/lib/actions/academic'
 import { Badge, type Tone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
@@ -66,8 +66,8 @@ export function TermList({ terms }: { terms: Term[] }) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setEditing(term)}>
-                  <CalendarDays className="h-4 w-4" />
-                  Datas
+                  <Pencil className="h-4 w-4" />
+                  Editar
                 </Button>
 
                 {term.status !== 'open' && (
@@ -99,29 +99,38 @@ export function TermList({ terms }: { terms: Term[] }) {
         })}
       </ul>
 
-      <TermDatesModal term={editing} onClose={() => setEditing(null)} />
+      <TermEditModal term={editing} onClose={() => setEditing(null)} />
     </>
   )
 }
 
-function TermDatesModal({ term, onClose }: { term: Term | null; onClose: () => void }) {
+function TermEditModal({ term, onClose }: { term: Term | null; onClose: () => void }) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   return (
-    <Modal open={!!term} onClose={onClose} title={`Datas — ${term?.name ?? ''}`}>
+    <Modal
+      open={!!term}
+      onClose={onClose}
+      title={`Editar — ${term?.name ?? ''}`}
+      description="O nome aparece nos boletins e relatórios."
+    >
       {term && (
         <form
           action={(fd) => {
             fd.set('term_id', term.id)
             start(async () => {
-              const r = await updateTermDates(null, fd)
+              const r = await updateTerm(null, fd)
               if (r.ok) onClose()
               else setError(r.error)
             })
           }}
           className="space-y-4"
         >
+          <Field label="Nome do período">
+            <Input name="name" defaultValue={term.name} required />
+          </Field>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Início">
               <Input type="date" name="starts_on" defaultValue={term.starts_on ?? ''} />

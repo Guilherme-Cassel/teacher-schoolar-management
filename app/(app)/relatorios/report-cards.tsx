@@ -50,6 +50,7 @@ export function ReportCards({
                   </th>
                 ))}
                 <th className="px-2 py-2 text-center font-semibold text-slate-600">Média</th>
+                <th className="px-2 py-2 text-center font-semibold text-slate-600">Freq.</th>
                 <th className="px-2 py-2 text-center font-semibold text-slate-600">Situação</th>
               </tr>
             </thead>
@@ -58,6 +59,7 @@ export function ReportCards({
               {data.subjects.map((subject) => {
                 const annual = row.annual[subject.classSubjectId]
                 const status = row.status[subject.classSubjectId]
+                const attendance = row.attendance[subject.classSubjectId] ?? null
 
                 return (
                   <tr key={subject.classSubjectId} className="border-b border-slate-100">
@@ -91,6 +93,24 @@ export function ReportCards({
 
                     <td className="tabular px-2 py-2 text-center font-semibold text-slate-900">
                       {formatGrade(annual, config.decimalPlaces)}
+                    </td>
+
+                    {/* A frequência entra na situação: sem mostrá-la, um
+                        "Reprovado" com média boa fica sem explicação. */}
+                    <td className="tabular px-2 py-2 text-center">
+                      {attendance === null ? (
+                        <span className="text-slate-300">—</span>
+                      ) : (
+                        <span
+                          className={cn(
+                            attendance < config.minAttendancePct
+                              ? 'font-semibold text-rose-600'
+                              : 'text-slate-600',
+                          )}
+                        >
+                          {attendance.toFixed(0)}%
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-2 py-2 text-center">

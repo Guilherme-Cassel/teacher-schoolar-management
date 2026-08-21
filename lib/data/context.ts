@@ -136,6 +136,41 @@ export const getCurrentYear = cache(async (schoolId: string) => {
   }
 })
 
+/** Linha de grading_configs como vem do banco. */
+export interface GradingConfigRow {
+  class_subject_id: string | null
+  passing_grade: number
+  max_grade: number
+  method: GradingConfig['method']
+  decimal_places: number
+  has_recovery: boolean
+  recovery_passing_grade: number | null
+  min_attendance_pct: number
+  adjust_tolerance: number
+  conduct_threshold: number
+}
+
+/**
+ * Converte a linha do banco na configuração usada pelo domínio.
+ *
+ * Exportada porque quem monta o boletim precisa resolver a configuração de
+ * várias ofertas de uma vez — chamar getGradingConfig por oferta seria uma
+ * consulta por disciplina.
+ */
+export function toGradingConfig(row: GradingConfigRow): GradingConfig {
+  return {
+    passingGrade: Number(row.passing_grade),
+    maxGrade: Number(row.max_grade),
+    method: row.method,
+    decimalPlaces: row.decimal_places,
+    hasRecovery: row.has_recovery,
+    recoveryPassingGrade: Number(row.recovery_passing_grade ?? 6),
+    minAttendancePct: Number(row.min_attendance_pct),
+    adjustTolerance: Number(row.adjust_tolerance),
+    conductThreshold: row.conduct_threshold,
+  }
+}
+
 /**
  * Configuração de avaliação: a da oferta, se existir; senão a padrão da escola;
  * senão os valores de fábrica.
@@ -157,15 +192,5 @@ export const getGradingConfig = cache(async (
   // Específica da oferta tem prioridade sobre a padrão da escola.
   const row = data.find((r) => r.class_subject_id === classSubjectId) ?? data[0]
 
-  return {
-    passingGrade: Number(row.passing_grade),
-    maxGrade: Number(row.max_grade),
-    method: row.method,
-    decimalPlaces: row.decimal_places,
-    hasRecovery: row.has_recovery,
-    recoveryPassingGrade: Number(row.recovery_passing_grade ?? 6),
-    minAttendancePct: Number(row.min_attendance_pct),
-    adjustTolerance: Number(row.adjust_tolerance),
-    conductThreshold: row.conduct_threshold,
-  }
+  return toGradingConfig(row as GradingConfigRow)
 })
