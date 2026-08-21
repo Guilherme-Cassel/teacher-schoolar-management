@@ -10,10 +10,19 @@ cria nem altera tabelas.
 
 No painel do Supabase → **SQL Editor → New query**, rode nesta ordem:
 
-1. `supabase/migrations/0004_school_provisioning.sql`
-2. `supabase/migrations/0005_historical_import.sql`
+1. `supabase/migrations/0004_school_provisioning.sql` — criar ambiente
+2. `supabase/migrations/0005_historical_import.sql` — importar planilha
+3. `supabase/migrations/0006_school_deletion.sql` — excluir ambiente
 
 As migrations `0001` a `0003` já estão aplicadas (confirmei pelo health check).
+
+Se ao tentar usar a tela aparecer **"Could not find the function ... in the
+schema cache"**, é porque a migration daquela função não foi aplicada. Depois de
+rodá-la, se o erro insistir, force o recarregamento do cache da API:
+
+```sql
+NOTIFY pgrst, 'reload schema';
+```
 
 ### Sobre zerar os dados
 
@@ -96,6 +105,8 @@ telas **precisam do seu olho**:
 
 - [ ] Seletor de ambiente troca de escola e volta para o Painel
 - [ ] Criar escola nova leva ao cadastro do ano letivo
+- [ ] Excluir ambiente: o backup baixa, abre no Excel e tem todas as abas
+- [ ] Excluir ambiente: o botão só libera após o download e o nome digitado
 - [ ] Recuperação de senha ponta a ponta (pedir → e-mail → nova senha → entrar)
 - [ ] Histórico de conduta de um aluno com ocorrências reais, impresso em PDF
 - [ ] Importação com uma planilha de verdade sua, num período fechado
