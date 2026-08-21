@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { ArrowLeft, FileText, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getAppContext, getCurrentYear, getGradingConfig } from '@/lib/data/context'
-import { conductBand, CONDUCT_BAND_LABEL, SEVERITY_LABEL, type Severity } from '@/lib/domain/conduct'
+import { conductBand, CONDUCT_BAND_LABEL, severityLabel, type Severity } from '@/lib/domain/conduct'
 import { ACADEMIC_STATUS_LABEL } from '@/lib/domain/grading'
 import { Badge, CONDUCT_TONE, STATUS_TONE } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -78,6 +78,9 @@ export default async function FichaAlunoPage({
     0,
   )
   const band = conductBand(totalConduct)
+  // Relatórios são montados por turma: sem ela o link cairia na primeira da
+  // lista, que pode nem ser a do aluno.
+  const classId = enrollments.find((e) => e.status === 'active')?.classes?.id ?? enrollments[0]?.classes?.id ?? null
   const termName = (termId: string) => terms.find((t) => t.id === termId)?.name ?? 'Período'
 
   return (
@@ -97,9 +100,27 @@ export default async function FichaAlunoPage({
           .filter(Boolean)
           .join(' · ')}
         action={
-          <Link href={{ pathname: '/relatorios', query: { aluno: student.id, tipo: 'boletim' } }}>
-            <Button variant="secondary">Ver boletim</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={{
+                pathname: '/relatorios',
+                query: { aluno: student.id, tipo: 'boletim', ...(classId ? { turma: classId } : {}) },
+              }}
+            >
+              <Button variant="secondary">Ver boletim</Button>
+            </Link>
+            <Link
+              href={{
+                pathname: '/relatorios',
+                query: { aluno: student.id, tipo: 'historico', ...(classId ? { turma: classId } : {}) },
+              }}
+            >
+              <Button variant="secondary">
+                <FileText className="h-4 w-4" />
+                Histórico de conduta
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -194,7 +215,7 @@ export default async function FichaAlunoPage({
                           {o.category}
                           <span className="text-slate-400">
                             {' '}
-                            · {SEVERITY_LABEL[o.severity]} ({isPraise ? '+' : '−'}
+                            · {severityLabel(o.type, o.severity)} ({isPraise ? '+' : '−'}
                             {o.severity})
                           </span>
                         </p>

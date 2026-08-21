@@ -42,6 +42,22 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
   3: 'Grave',
 }
 
+/**
+ * A severidade é a mesma escala 1–3 para elogio e crítica, mas as palavras
+ * não servem para os dois: "Ajudou colegas — Grave" está errado. Como o
+ * relatório de conduta vai para a mão dos pais, o rótulo precisa acompanhar
+ * o tipo da ocorrência.
+ */
+const PRAISE_WEIGHT_LABEL: Record<Severity, string> = {
+  1: 'Simples',
+  2: 'Relevante',
+  3: 'Destaque',
+}
+
+export function severityLabel(type: OccurrenceType, severity: Severity): string {
+  return type === 'praise' ? PRAISE_WEIGHT_LABEL[severity] : SEVERITY_LABEL[severity]
+}
+
 /** Categorias sugeridas; a professora pode digitar outras. */
 export const PRAISE_CATEGORIES = [
   'Participação em aula',

@@ -19,7 +19,7 @@ import {
 } from '@/lib/actions/closure'
 import type { ClosureRow } from '@/lib/data/closure'
 import { ACADEMIC_STATUS_LABEL, type GradingConfig } from '@/lib/domain/grading'
-import { CONDUCT_BAND_LABEL, SEVERITY_LABEL } from '@/lib/domain/conduct'
+import { CONDUCT_BAND_LABEL, severityLabel } from '@/lib/domain/conduct'
 import {
   MIN_JUSTIFICATION_LENGTH,
   SUGGESTION_LABEL,
@@ -326,7 +326,7 @@ export function ClosureTable({ rows, config, classSubjectId, termId, termName, o
                                   {o.category}
                                   <span className="text-slate-400">
                                     {' '}
-                                    · {SEVERITY_LABEL[o.severity]} (
+                                    · {severityLabel(o.type, o.severity)} (
                                     {o.type === 'praise' ? '+' : '−'}
                                     {o.severity}) · {formatDate(o.occurred_on)}
                                   </span>

@@ -38,7 +38,8 @@ export function ReportControls({
         aria-label="Tipo de relatório"
       >
         <option value="boletim">Boletim</option>
-        <option value="conduta">Relatório de conduta</option>
+        <option value="conduta">Conduta da turma</option>
+        <option value="historico">Histórico do aluno</option>
       </Select>
 
       <Select

@@ -6,7 +6,7 @@ import { createOccurrence, deleteOccurrence } from '@/lib/actions/occurrences'
 import {
   CRITICISM_CATEGORIES,
   PRAISE_CATEGORIES,
-  SEVERITY_LABEL,
+  severityLabel,
   conductBand,
   type Severity,
 } from '@/lib/domain/conduct'
@@ -203,7 +203,7 @@ function OccurrenceItem({
           {occurrence.category}
           <span className="text-slate-400">
             {' '}
-            · {SEVERITY_LABEL[occurrence.severity]} ({isPraise ? '+' : '−'}
+            · {severityLabel(occurrence.type, occurrence.severity)} ({isPraise ? '+' : '−'}
             {occurrence.severity})
           </span>
         </p>
