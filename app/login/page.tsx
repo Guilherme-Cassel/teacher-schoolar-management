@@ -1,11 +1,13 @@
 'use client'
 
 import { Suspense, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { GraduationCap, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/field'
+import { Field, Input, Label } from '@/components/ui/field'
 
 function LoginForm() {
   const router = useRouter()
@@ -24,11 +26,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(
-        error.message === 'Invalid login credentials'
-          ? 'E-mail ou senha incorretos.'
-          : error.message,
-      )
+      setError(translateAuthError(error.message))
       setLoading(false)
       return
     }
@@ -54,15 +52,25 @@ function LoginForm() {
         />
       </Field>
 
-      <Field label="Senha">
+      <div>
+        <div className="flex items-baseline justify-between">
+          <Label htmlFor="senha">Senha</Label>
+          <Link
+            href="/login/recuperar"
+            className="mb-1.5 text-sm text-brand-700 hover:text-brand-800 hover:underline"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <Input
+          id="senha"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
         />
-      </Field>
+      </div>
 
       {error && (
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-200">
