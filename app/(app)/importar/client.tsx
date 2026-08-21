@@ -251,7 +251,7 @@ function PreviewStep({
             title={`${issues.length} problema(s) para corrigir`}
             description="Nada foi gravado. Ajuste a planilha e envie de novo."
           />
-          <div className="max-h-96 overflow-y-auto">
+          <div className="scroll-x max-h-96 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>

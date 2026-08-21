@@ -71,6 +71,12 @@ body {
     max-width: none !important;
   }
 
+  /* No papel não há para onde rolar: o contêiner precisa deixar a tabela
+     inteira fluir, senão a impressão corta as últimas colunas. */
+  .scroll-x {
+    overflow: visible !important;
+  }
+
   /* Não quebrar um aluno no meio entre páginas. */
   tr, .avoid-break {
     break-inside: avoid;
@@ -83,4 +89,12 @@ body {
 
 .print-only {
   display: none;
+}
+
+/* Tabelas largas (boletim, prévia de importação) rolam dentro da própria
+   caixa. Sem isso é a PÁGINA que rola para o lado no celular, e a navegação
+   inteira sai do lugar. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

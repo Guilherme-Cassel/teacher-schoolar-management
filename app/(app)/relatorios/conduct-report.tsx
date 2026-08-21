@@ -28,7 +28,8 @@ export function ConductReport({
         </p>
       </header>
 
-      <table className="w-full border-collapse text-sm">
+      <div className="scroll-x">
+        <table className="w-full min-w-[26rem] border-collapse text-sm">
         <thead>
           <tr className="border-b border-slate-300 text-left">
             <th className="py-2 font-semibold text-slate-600">Aluno</th>
@@ -56,7 +57,8 @@ export function ConductReport({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       {sorted.length === 0 && (
         <p className="py-8 text-center text-sm text-slate-500">Nenhum aluno nesta turma.</p>

@@ -40,7 +40,8 @@ export function ReportCards({
             </p>
           </header>
 
-          <table className="w-full border-collapse text-sm">
+          <div className="scroll-x">
+            <table className="w-full min-w-[34rem] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-300">
                 <th className="py-2 text-left font-semibold text-slate-600">Disciplina</th>
@@ -131,7 +132,8 @@ export function ReportCards({
                 )
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
 
           <footer className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs text-slate-500">
             <span>
