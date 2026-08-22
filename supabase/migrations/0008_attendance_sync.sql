@@ -121,6 +121,9 @@ begin
 end
 $fn$;
 
+-- A funcao NAO recebe grant: quem a chama e o gatilho, que roda como dono.
+-- Ver 0009, que revoga o EXECUTE que o Postgres concede a PUBLIC por padrao.
+
 -- AFTER, nao BEFORE: o recalculo precisa enxergar a linha ja gravada.
 drop trigger if exists lessons_sync_attendance on lessons;
 create trigger lessons_sync_attendance
@@ -132,4 +135,3 @@ create trigger lesson_absences_sync_attendance
   after insert or update or delete on lesson_absences
   for each row execute function public.trg_recompute_term_attendance();
 
-grant execute on function public.recompute_term_attendance(uuid, uuid) to authenticated;
