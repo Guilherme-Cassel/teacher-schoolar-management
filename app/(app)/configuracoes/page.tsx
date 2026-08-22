@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Route } from 'next'
-import { ChevronRight, School } from 'lucide-react'
+import { ChevronRight, School, SlidersHorizontal } from 'lucide-react'
 import { getAppContext } from '@/lib/data/context'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
@@ -17,6 +17,13 @@ export default async function SettingsPage() {
     title: string
     description: string
   }[] = [
+    {
+      href: '/configuracoes/avaliacao',
+      icon: SlidersHorizontal,
+      title: 'Regras de avaliação',
+      description:
+        'Nota para aprovação, frequência mínima, cálculo da média e a sugestão do fechamento.',
+    },
     {
       href: '/configuracoes/escolas',
       icon: School,

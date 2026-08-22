@@ -1,9 +1,10 @@
 import { School } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { getAppContext, getCurrentYear } from '@/lib/data/context'
+import { type GradingConfigRow, getAppContext, getCurrentYear, toGradingConfig } from '@/lib/data/context'
+import { DEFAULT_GRADING_CONFIG } from '@/lib/domain/grading'
 import { Card, CardHeader, EmptyState } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
-import { ClassCard, NewClassButton, SubjectManager } from './client'
+import { type GradingConfigMap, ClassCard, NewClassButton, SubjectManager } from './client'
 
 export default async function TurmasPage() {
   const ctx = (await getAppContext())!
@@ -41,6 +42,25 @@ export default async function TurmasPage() {
     enrolled.set(row.class_id, (enrolled.get(row.class_id) ?? 0) + 1)
   }
 
+  // Regras de avaliação: a padrão da escola e as disciplinas que fugiram dela.
+  // Uma consulta só; a resolução por oferta é feita em memória.
+  const { data: configRows } = await supabase
+    .from('grading_configs')
+    .select('*')
+    .eq('school_id', ctx.schoolId)
+
+  const rows = (configRows ?? []) as unknown as GradingConfigRow[]
+  const defaultRow = rows.find((r) => r.class_subject_id === null)
+
+  const configs: GradingConfigMap = {
+    schoolDefault: defaultRow ? toGradingConfig(defaultRow) : DEFAULT_GRADING_CONFIG,
+    byOffer: Object.fromEntries(
+      rows
+        .filter((r) => r.class_subject_id !== null)
+        .map((r) => [r.class_subject_id as string, toGradingConfig(r)]),
+    ),
+  }
+
   return (
     <>
       <PageHeader
@@ -75,6 +95,7 @@ export default async function TurmasPage() {
                 klass={c}
                 subjects={subjectList}
                 studentCount={enrolled.get(c.id) ?? 0}
+                configs={configs}
               />
             ))
           )}

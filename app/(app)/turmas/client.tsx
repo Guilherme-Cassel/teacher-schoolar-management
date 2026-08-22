@@ -11,6 +11,8 @@ import {
   deleteSubject,
   removeClassSubject,
 } from '@/lib/actions/registry'
+import type { GradingConfig } from '@/lib/domain/grading'
+import { SubjectRulesButton } from './subject-rules'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
@@ -87,14 +89,22 @@ export function NewClassButton({ schoolYearId }: { schoolYearId: string }) {
   )
 }
 
+export interface GradingConfigMap {
+  schoolDefault: GradingConfig
+  /** Só as ofertas que fugiram do padrão. */
+  byOffer: Record<string, GradingConfig>
+}
+
 export function ClassCard({
   klass,
   subjects,
   studentCount,
+  configs,
 }: {
   klass: Klass
   subjects: Subject[]
   studentCount: number
+  configs: GradingConfigMap
 }) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -159,6 +169,13 @@ export function ClassCard({
               className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pl-3 pr-1.5 text-sm font-medium text-brand-700 ring-1 ring-inset ring-brand-200"
             >
               {cs.subjects.name}
+              <SubjectRulesButton
+                classSubjectId={cs.id}
+                subjectName={cs.subjects.name}
+                className={klass.name}
+                config={configs.byOffer[cs.id] ?? configs.schoolDefault}
+                hasOwn={cs.id in configs.byOffer}
+              />
               <button
                 type="button"
                 disabled={pending}
