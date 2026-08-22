@@ -96,6 +96,66 @@ export function calculateAverage(
   return { average: roundTo(raw, config.decimalPlaces), pending }
 }
 
+export interface TermOutcome {
+  /** Nota registrada no fechamento; null enquanto o período não foi fechado. */
+  finalGrade: number | null
+  /** Média das avaliações lançadas; null quando nada foi lançado ainda. */
+  calculatedAverage: number | null
+}
+
+export interface AnnualAverageResult {
+  average: number | null
+  /** Períodos que entraram com nota já decidida no fechamento. */
+  closedCount: number
+  /** Períodos que entraram apenas como prévia (ainda em andamento). */
+  previewCount: number
+  /** Períodos sem nota nenhuma, que ficaram de fora da conta. */
+  emptyCount: number
+}
+
+/**
+ * Média anual a partir dos períodos.
+ *
+ * Um período fechado entra com a nota decidida pela professora (que pode ter
+ * sido ajustada); um período em andamento entra com a média calculada até
+ * ali; um período sem nenhuma nota fica de fora — incluí-lo como zero
+ * afundaria a média de todo mundo em março.
+ *
+ * Esta função existe porque o Boletim e o Fechamento anual calculavam a média
+ * anual de formas diferentes: um considerava períodos em aberto, o outro não,
+ * e os dois mostravam números diferentes para o mesmo aluno. Qual regra vale
+ * é decisão de negócio, então ela mora aqui e é testada, em vez de repetida
+ * na montagem de cada tela.
+ */
+export function annualAverage(
+  terms: TermOutcome[],
+  config: GradingConfig,
+): AnnualAverageResult {
+  let closedCount = 0
+  let previewCount = 0
+  let emptyCount = 0
+  const values: number[] = []
+
+  for (const term of terms) {
+    if (term.finalGrade !== null) {
+      closedCount++
+      values.push(term.finalGrade)
+    } else if (term.calculatedAverage !== null) {
+      previewCount++
+      values.push(term.calculatedAverage)
+    } else {
+      emptyCount++
+    }
+  }
+
+  const average =
+    values.length > 0
+      ? roundTo(values.reduce((acc, n) => acc + n, 0) / values.length, config.decimalPlaces)
+      : null
+
+  return { average, closedCount, previewCount, emptyCount }
+}
+
 /** Percentual de presença. null quando não há aulas registradas no período. */
 export function attendancePercent(classesHeld: number, absences: number): number | null {
   if (classesHeld <= 0) return null

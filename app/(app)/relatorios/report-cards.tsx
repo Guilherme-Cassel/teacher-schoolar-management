@@ -40,7 +40,8 @@ export function ReportCards({
             </p>
           </header>
 
-          <table className="w-full border-collapse text-sm">
+          <div className="scroll-x">
+            <table className="w-full min-w-[34rem] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-300">
                 <th className="py-2 text-left font-semibold text-slate-600">Disciplina</th>
@@ -50,6 +51,7 @@ export function ReportCards({
                   </th>
                 ))}
                 <th className="px-2 py-2 text-center font-semibold text-slate-600">Média</th>
+                <th className="px-2 py-2 text-center font-semibold text-slate-600">Freq.</th>
                 <th className="px-2 py-2 text-center font-semibold text-slate-600">Situação</th>
               </tr>
             </thead>
@@ -58,6 +60,7 @@ export function ReportCards({
               {data.subjects.map((subject) => {
                 const annual = row.annual[subject.classSubjectId]
                 const status = row.status[subject.classSubjectId]
+                const attendance = row.attendance[subject.classSubjectId] ?? null
 
                 return (
                   <tr key={subject.classSubjectId} className="border-b border-slate-100">
@@ -93,6 +96,24 @@ export function ReportCards({
                       {formatGrade(annual, config.decimalPlaces)}
                     </td>
 
+                    {/* A frequência entra na situação: sem mostrá-la, um
+                        "Reprovado" com média boa fica sem explicação. */}
+                    <td className="tabular px-2 py-2 text-center">
+                      {attendance === null ? (
+                        <span className="text-slate-300">—</span>
+                      ) : (
+                        <span
+                          className={cn(
+                            attendance < config.minAttendancePct
+                              ? 'font-semibold text-rose-600'
+                              : 'text-slate-600',
+                          )}
+                        >
+                          {attendance.toFixed(0)}%
+                        </span>
+                      )}
+                    </td>
+
                     <td className="px-2 py-2 text-center">
                       {annual === null ? (
                         <span className="text-slate-300">—</span>
@@ -111,7 +132,8 @@ export function ReportCards({
                 )
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
 
           <footer className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs text-slate-500">
             <span>

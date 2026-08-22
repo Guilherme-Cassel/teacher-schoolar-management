@@ -31,18 +31,38 @@ Ou seja: para o app funcionar bastam **URL + anon key**. A connection string só
 5. Plano **Free**. Aguarde ~2 minutos até provisionar.
 
 ### Onde ficam as credenciais
-- **Settings → API**: `Project URL` e a chave `anon` / `publishable`.
-- **Settings → Database → Connection string** (aba *URI*): a connection string. Substitua `[YOUR-PASSWORD]` pela senha do passo 3.
 
----
+O painel do Supabase mudou os nomes das chaves — o que a documentação antiga
+chamava de `anon` hoje aparece como **publishable**:
+
+- **Project Settings → API Keys**, aba *Publishable and secret*: a chave
+  **Publishable** (`sb_publishable_...`) é a que vai em
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`. A aba *Legacy anon, service_role* ainda
+  entrega o formato antigo (`eyJhbGci...`), que também funciona.
+- **Ignore a Secret key** (`sb_secret_...`, antiga `service_role`): ela passa
+  por cima de todo o RLS e não deve entrar no app.
+- **Project Settings → Data API**: o `Project URL`. Se não achar, ele é o
+  *project ref* que está na própria URL do painel
+  (`supabase.com/dashboard/project/SEU_REF`) mais `.supabase.co`.
+- **Project Settings → Database → Connection string** (aba *URI*): só é
+  necessária para aplicar migrations pela CLI. Substitua `[YOUR-PASSWORD]`
+  pela senha do passo 3.
 
 ## 3. Aplicar o schema
 
 **Opção A — pelo painel (recomendada, sem instalar nada):**
+
+Rode os arquivos de `supabase/migrations/` **na ordem numérica**, um de cada vez:
+
 1. No projeto, abra **SQL Editor → New query**.
-2. Cole todo o conteúdo de [`supabase/migrations/0001_initial_schema.sql`](../supabase/migrations/0001_initial_schema.sql).
-3. **Run**. Deve terminar sem erro.
+2. Cole o conteúdo de `0001_initial_schema.sql` e clique em **Run**.
+3. Repita, na ordem, para `0002_health_check.sql`, `0003_annual_indexes.sql`,
+   `0004_school_provisioning.sql` e `0005_historical_import.sql`.
 4. Confira em **Table Editor**: devem aparecer 16 tabelas com o cadeado de RLS ativo.
+
+A ordem importa: as migrations posteriores assumem que as anteriores já
+rodaram. Nunca edite um arquivo já aplicado — crie um novo com o próximo
+número.
 
 **Opção B — pela CLI** (se você já tiver o Supabase CLI):
 ```bash
@@ -104,7 +124,38 @@ Sem isso o login funciona local mas quebra em produção.
 
 ---
 
-## 7. Antes de mostrar para ela
+---
+
+## 7. Recuperação de senha
+
+A tela de login tem **Esqueci minha senha**, que leva a `/login/recuperar`.
+O Supabase envia o e-mail e o link volta para `/login/redefinir`.
+
+Para funcionar, em **Authentication → URL Configuration** as **Redirect URLs**
+precisam cobrir esse caminho. Os curingas do passo anterior já resolvem:
+
+- `https://gestao-escolar.vercel.app/**`
+- `http://localhost:3000/**`
+
+Se você preferir cadastrar sem curinga, inclua explicitamente
+`https://gestao-escolar.vercel.app/login/redefinir` e
+`http://localhost:3000/login/redefinir`.
+
+### Detalhes que evitam suporte depois
+
+- O link vale **uma hora** e só pode ser usado **uma vez**. Depois disso a tela
+  mostra "Link inválido ou expirado" com um botão para pedir outro.
+- A tela de recuperação **sempre** diz que o e-mail foi enviado, mesmo quando
+  não existe conta com aquele endereço. É de propósito: a resposta contrária
+  entregaria a estranhos quais e-mails têm cadastro.
+- No plano gratuito o Supabase limita o envio de e-mails (poucos por hora) e
+  usa um remetente compartilhado, que às vezes cai no spam. Para uso real,
+  configure um SMTP próprio em **Authentication → Emails → SMTP Settings**.
+- A senha nova exige no mínimo 8 caracteres na tela. O mínimo do próprio
+  Supabase é 6 e fica em **Authentication → Policies**; se você aumentá-lo lá,
+  ajuste também `MIN_LENGTH` em `app/login/redefinir/page.tsx`.
+
+## 8. Antes de mostrar para ela
 
 - [ ] O login funciona na URL da Vercel, pelo celular.
 - [ ] Existe uma turma com alunos de exemplo já cadastrados.

@@ -153,7 +153,19 @@ export function AnnualTable({ rows, terms, config, classSubjectId, schoolYearId 
                     {row.terms.map((cell) => (
                       <td key={cell.termId} className="tabular px-2 py-3 text-center">
                         {cell.finalGrade === null ? (
-                          <span className="text-slate-300">—</span>
+                          // Período em aberto entra na média anual como prévia;
+                          // mostrar o valor entre parênteses deixa claro que
+                          // aquele número ainda não é uma decisão tomada.
+                          cell.calculatedAverage === null ? (
+                            <span className="text-slate-300">—</span>
+                          ) : (
+                            <span
+                              className="text-slate-400"
+                              title="Prévia: período ainda não fechado"
+                            >
+                              ({formatGrade(cell.calculatedAverage, config.decimalPlaces)})
+                            </span>
+                          )
                         ) : (
                           <span
                             className={
@@ -186,6 +198,11 @@ export function AnnualTable({ rows, terms, config, classSubjectId, schoolYearId 
                       >
                         {formatGrade(row.annualAverage, config.decimalPlaces)}
                       </span>
+                      {row.previewTerms > 0 && (
+                        <p className="mt-0.5 text-[10px] font-normal text-slate-400">
+                          inclui prévia
+                        </p>
+                      )}
                     </td>
 
                     <td className="tabular px-3 py-3 text-center">

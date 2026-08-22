@@ -194,7 +194,7 @@ export function AttendanceGrid({
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-2 font-semibold">Aluno</th>
+                  <th className="sticky left-0 z-10 min-w-44 bg-slate-50 px-4 py-2 font-semibold">Aluno</th>
                   <th className="px-3 py-2 text-center font-semibold">Faltas</th>
                   <th className="px-3 py-2 text-center font-semibold">Presenças</th>
                   <th className="px-3 py-2 text-center font-semibold">Frequência</th>
@@ -210,7 +210,15 @@ export function AttendanceGrid({
 
                   return (
                     <tr key={student.id} className={cn(reprovado && 'bg-rose-50/40')}>
-                      <td className="px-4 py-1.5">
+                      {/* Coluna fixa: no celular a tabela rola para o lado e,
+                          sem ela, some a referência de quem é a linha. O fundo
+                          precisa ser opaco e acompanhar o destaque da linha. */}
+                      <td
+                        className={cn(
+                          'sticky left-0 z-10 border-r border-slate-200 px-4 py-1.5',
+                          reprovado ? 'bg-rose-50' : 'bg-white',
+                        )}
+                      >
                         <span className="font-medium text-slate-800">{student.full_name}</span>
                         {student.registration_code && (
                           <span className="ml-2 text-xs text-slate-400">

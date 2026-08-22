@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   type AssessmentScore, type GradingConfig,
-  DEFAULT_GRADING_CONFIG, attendancePercent, calculateAverage, resolveStatus, roundTo,
+  DEFAULT_GRADING_CONFIG, annualAverage, attendancePercent, calculateAverage, resolveStatus, roundTo,
 } from '../grading'
 
 const cfg = (over: Partial<GradingConfig> = {}): GradingConfig => ({
@@ -97,5 +97,57 @@ describe('resolveStatus', () => {
   it('manda para recuperação quando a escola tem recuperação', () => {
     expect(resolveStatus(5, 90, cfg({ hasRecovery: true }))).toBe('recovery')
     expect(resolveStatus(5, 90, cfg({ hasRecovery: false }))).toBe('failed')
+  })
+})
+
+describe('annualAverage', () => {
+  const term = (finalGrade: number | null, calculatedAverage: number | null = null) => ({
+    finalGrade,
+    calculatedAverage,
+  })
+
+  it('usa a nota do fechamento quando o período está fechado', () => {
+    const r = annualAverage([term(7), term(8)], DEFAULT_GRADING_CONFIG)
+    expect(r.average).toBe(7.5)
+    expect(r.closedCount).toBe(2)
+    expect(r.previewCount).toBe(0)
+  })
+
+  it('usa a média calculada como prévia no período ainda aberto', () => {
+    const r = annualAverage([term(6), term(null, 8)], DEFAULT_GRADING_CONFIG)
+    expect(r.average).toBe(7)
+    expect(r.closedCount).toBe(1)
+    expect(r.previewCount).toBe(1)
+  })
+
+  it('prefere a nota do fechamento à média calculada no mesmo período', () => {
+    // O fechamento pode ter sido ajustado; recalcular descartaria a decisão.
+    const r = annualAverage([term(6, 5.8)], DEFAULT_GRADING_CONFIG)
+    expect(r.average).toBe(6)
+  })
+
+  it('ignora períodos sem nota nenhuma em vez de contá-los como zero', () => {
+    // Em março só o 1º bimestre tem nota; contar os outros três como zero
+    // reprovaria a turma inteira.
+    const r = annualAverage(
+      [term(null, 8), term(null), term(null), term(null)],
+      DEFAULT_GRADING_CONFIG,
+    )
+    expect(r.average).toBe(8)
+    expect(r.emptyCount).toBe(3)
+  })
+
+  it('devolve null quando nenhum período tem nota', () => {
+    const r = annualAverage([term(null), term(null)], DEFAULT_GRADING_CONFIG)
+    expect(r.average).toBeNull()
+    expect(r.emptyCount).toBe(2)
+  })
+
+  it('respeita as casas decimais da configuração', () => {
+    const r = annualAverage([term(7), term(8), term(8)], {
+      ...DEFAULT_GRADING_CONFIG,
+      decimalPlaces: 2,
+    })
+    expect(r.average).toBe(7.67)
   })
 })
