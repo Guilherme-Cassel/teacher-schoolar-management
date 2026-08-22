@@ -3,8 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppContext } from '@/lib/data/context'
 import { Card, CardHeader, EmptyState } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
+import { getYearContents } from '@/lib/actions/academic'
 import { TermList, YearSwitcher } from './term-list'
 import { NewYearButton } from './new-year'
+import { DeleteYearButton } from './delete-year'
 
 export default async function PeriodosPage() {
   const ctx = (await getAppContext())!
@@ -26,6 +28,9 @@ export default async function PeriodosPage() {
         .eq('school_year_id', current.id)
         .order('position')
     : { data: [] }
+
+  // O que a exclusão do ano levaria embora, mostrado antes de confirmar.
+  const contents = current ? await getYearContents(current.id) : null
 
   return (
     <>
@@ -51,6 +56,15 @@ export default async function PeriodosPage() {
             <CardHeader
               title={"Ano letivo " + current.year}
               description="Abra um período para lançar notas; feche para travar as alterações."
+              action={
+                contents && (
+                  <DeleteYearButton
+                    yearId={current.id}
+                    year={current.year}
+                    contents={contents}
+                  />
+                )
+              }
             />
             <TermList terms={terms ?? []} />
           </Card>
