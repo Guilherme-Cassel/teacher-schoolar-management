@@ -1,4 +1,4 @@
-# Gestão Escolar (School Management)
+# School Management
 
 A web app for a teacher to manage **grades**, **attendance**, **classroom
 incidents/conduct** and **term closing** all in one place — replacing a bunch
