@@ -1,108 +1,85 @@
-# Gestão Escolar
+# Gestão Escolar (School Management)
 
-Sistema web para uma professora controlar **notas**, **ocorrências de sala de aula**
-e o **fechamento de período** num lugar só — substituindo as várias planilhas.
+A web app for a teacher to manage **grades**, **attendance**, **classroom
+incidents/conduct** and **term closing** all in one place — replacing a bunch
+of loose spreadsheets.
 
-O diferencial está no fechamento: quando um aluno fica pouco abaixo da média, o
-sistema cruza a nota com o histórico de elogios e críticas e **sugere** ajustar ou
-manter. A decisão e a justificativa são sempre da professora, e ficam registradas.
+The key feature is the closing screen: when a student's grade falls just
+short of the passing average, the system cross-references the grade with
+their conduct history and **suggests** whether to round up or keep it. The
+decision and justification are always the teacher's, and get permanently
+recorded — the calculated average is never overwritten.
 
-## Começando
+**Stack:** Next.js 15 (App Router) · TypeScript · Supabase (Postgres + Auth +
+RLS) · Tailwind CSS · Vitest.
 
-1. Siga [`docs/SETUP.md`](docs/SETUP.md) para criar o projeto Supabase, aplicar o
-   schema e rodar o seed.
-2. Crie o `.env.local` a partir de `.env.local.example`.
-3. Instale e rode:
+## Core rules
+
+- **Average**: configurable per school or per subject — passing threshold,
+  calculation method (arithmetic, weighted, sum of points), decimal places,
+  makeup exams and minimum attendance. Assessments with different scales are
+  normalized before entering the average.
+- **Conduct**: each incident (praise/criticism) has a severity from 1 to 3;
+  the term balance sums one and subtracts the other.
+- **Closing suggestion**: cross-references how far a student is from passing
+  with their conduct balance, and suggests rounding up, keeping the grade, or
+  leaving the call open.
+- **Audit trail**: adjusting a grade requires a justification — enforced as a
+  `CHECK constraint` in the database, not just UI validation. A closed term
+  blocks further entries via a trigger.
+- **Security**: every table has RLS — each user only sees data for the school
+  they're a member of. The model already supports multiple teachers sharing
+  the same students and classes.
+
+These rules live in three side-effect-free files, all covered by tests:
+[`lib/domain/grading.ts`](lib/domain/grading.ts),
+[`lib/domain/conduct.ts`](lib/domain/conduct.ts) and
+[`lib/domain/closure-suggestion.ts`](lib/domain/closure-suggestion.ts).
+
+## Project layout
+
+```
+app/(app)/          authenticated screens: dashboard, grades, attendance, closing…
+app/login/          authentication
+components/         shared UI
+lib/domain/         business rules — pure functions, tested
+lib/data/           screen data assembly from the database
+lib/actions/        server actions (writes)
+lib/supabase/       browser/server clients and session middleware
+supabase/migrations versioned schema (+ supabase/migrations.sql, consolidated)
+supabase/seed/      fictional sample data
+```
+
+## Running locally
+
+The project is plug-and-play: there's no real data or credentials in the
+code, only placeholders. All you need is your own (free) Supabase project.
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. In the **SQL Editor**, run [`supabase/migrations.sql`](supabase/migrations.sql)
+   to create the full schema — and, if you want sample data, the files in
+   [`supabase/seed/`](supabase/seed/), in numeric order.
+3. Copy `.env.local.example` to `.env.local` and fill it in with your
+   project's URL and `anon key` (**Project Settings → API**).
+4. Install and run:
 
 ```bash
 npm install
-```
-
-```bash
 npm run dev
 ```
 
-## Comandos
+Full step-by-step guide (including Vercel deploy) in
+[`docs/SETUP.md`](docs/SETUP.md) (in Portuguese).
+
+## Commands
 
 ```bash
-npm run dev
+npm run dev        # development server
+npm run build      # production build
+npm test           # tests (vitest)
+npm run typecheck  # type checking
 ```
 
-```bash
-npm run build
-```
+## License
 
-```bash
-npm test
-```
-
-```bash
-npm run typecheck
-```
-
-## Como está organizado
-
-```
-app/(app)/          telas autenticadas: painel, notas, ocorrências, fechamento…
-app/login/          autenticação
-components/         UI compartilhada (botões, modal, badges, navegação)
-lib/domain/         REGRA DE NEGÓCIO — funções puras, cobertas por testes
-lib/data/           montagem das telas a partir do banco
-lib/actions/        Server Actions (escrita)
-lib/supabase/       clientes browser/server e middleware de sessão
-supabase/migrations schema versionado
-supabase/seed/      dados iniciais
-```
-
-O coração do sistema são três arquivos, todos sem I/O e testados:
-
-| Arquivo | Responsabilidade |
-|---|---|
-| `lib/domain/grading.ts` | médias (aritmética, ponderada, soma de pontos), frequência, situação |
-| `lib/domain/conduct.ts` | saldo de conduta e suas faixas |
-| `lib/domain/closure-suggestion.ts` | o motor de sugestão do fechamento |
-
-## Regras principais
-
-**Média** — configurável por escola ou por disciplina: valor de aprovação, método
-de cálculo, casas decimais, recuperação e frequência mínima. Avaliações com
-escalas diferentes são normalizadas antes de entrar na média (um trabalho de 0–5
-vale o dobro por ponto de uma prova de 0–10).
-
-**Conduta** — cada ocorrência tem tipo (elogio ou crítica) e severidade de 1 a 3.
-O saldo do período é a soma dos elogios menos a das críticas, ponderada pela
-severidade. Faixas: `≥ +3` muito positivo, `+1..+2` positivo, `0` neutro,
-`−1..−2` atenção, `≤ −3` crítico.
-
-**Sugestão de fechamento**
-
-```
-gap = média de aprovação − média calculada
-
-frequência abaixo do mínimo  → sem sugestão (ajustar nota não resolve falta)
-gap ≤ 0                      → já aprovado
-gap > tolerância (0,5)       → fora da faixa de ajuste
-0 < gap ≤ tolerância:
-    conduta ≥ limiar         → SUGERIR ajustar
-    conduta ≤ −limiar        → SUGERIR manter
-    entre os dois            → decisão livre
-```
-
-**Auditoria** — `term_closures.calculated_average` nunca é sobrescrita. Um ajuste
-grava `final_grade`, `justification`, `decided_by` e `decided_at`. A exigência de
-justificativa é uma `CHECK constraint` no banco, não só validação de tela: nem
-alterando direto no Postgres dá para ajustar uma nota sem registrar o motivo.
-
-**Período fechado trava lançamento** — um trigger recusa inserir, alterar ou
-apagar notas e ocorrências de um período com status `closed`.
-
-## Segurança
-
-Toda tabela tem RLS: você só enxerga as linhas da escola de que é membro
-(`school_members`). O protótipo tem uma escola e uma usuária, mas o modelo já
-suporta várias professoras compartilhando os mesmos alunos e turmas — o recorte
-por professora vem de `class_subjects.teacher_id`.
-
-A chave usada no navegador é a `anon key`, pública por design; quem protege os
-dados é o RLS no Postgres. A connection string do banco **não** é usada pela
-aplicação e não deve ir para o repositório.
+[MIT](LICENSE)

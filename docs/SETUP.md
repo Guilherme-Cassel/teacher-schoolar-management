@@ -50,21 +50,22 @@ chamava de `anon` hoje aparece como **publishable**:
 
 ## 3. Aplicar o schema
 
-**Opção A — pelo painel (recomendada, sem instalar nada):**
-
-Rode os arquivos de `supabase/migrations/` **na ordem numérica**, um de cada vez:
+**Opção A — um arquivo só (mais simples):**
 
 1. No projeto, abra **SQL Editor → New query**.
-2. Cole o conteúdo de `0001_initial_schema.sql` e clique em **Run**.
-3. Repita, na ordem, para `0002_health_check.sql`, `0003_annual_indexes.sql`,
-   `0004_school_provisioning.sql` e `0005_historical_import.sql`.
-4. Confira em **Table Editor**: devem aparecer 16 tabelas com o cadeado de RLS ativo.
+2. Cole o conteúdo de [`supabase/migrations.sql`](../supabase/migrations.sql)
+   e clique em **Run**.
+3. Confira em **Table Editor**: devem aparecer as tabelas com o cadeado de RLS ativo.
 
-A ordem importa: as migrations posteriores assumem que as anteriores já
-rodaram. Nunca edite um arquivo já aplicado — crie um novo com o próximo
-número.
+**Opção B — arquivo por arquivo:**
 
-**Opção B — pela CLI** (se você já tiver o Supabase CLI):
+Rode os arquivos de `supabase/migrations/` **na ordem numérica**, um de cada vez,
+colando cada um no SQL Editor. A ordem importa: as migrations posteriores
+assumem que as anteriores já rodaram. Nunca edite um arquivo já aplicado —
+crie um novo com o próximo número. `supabase/migrations.sql` é gerado a
+partir desses arquivos, nesta ordem.
+
+**Opção C — pela CLI** (se você já tiver o Supabase CLI):
 ```bash
 supabase link --project-ref SEU_PROJECT_REF
 supabase db push
